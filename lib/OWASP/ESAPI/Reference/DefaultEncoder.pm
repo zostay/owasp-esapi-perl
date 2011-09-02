@@ -15,6 +15,7 @@ use OWASP::ESAPI::Codec::VBScriptCodec;
 use OWASP::ESAPI::Codec::CSSCodec;
 use OWASP::ESAPI::Exception;
 
+use List::Util qw( sum );
 use MIME::Base64 ();
 use URI::Escape ();
 
