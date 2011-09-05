@@ -26,15 +26,15 @@ sub encode_character {
 sub decode_character {
     my ($self, $input) = @_;
 
-    return "\b" if $$input =~ s{^\\b}{};
-    return "\t" if $$input =~ s{^\\t}{};
-    return "\n" if $$input =~ s{^\\n}{};
-    return "\v" if $$input =~ s{^\\v}{};
-    return "\f" if $$input =~ s{^\\f}{};
-    return "\r" if $$input =~ s{^\\r}{};
-    return '"'  if $$input =~ s{^\\"}{};
-    return "'"  if $$input =~ s{^\\'}{};
-    return "\\" if $$input =~ s{^\\\\}{};
+    return "\b"   if $$input =~ s{^\\b}{};
+    return "\t"   if $$input =~ s{^\\t}{};
+    return "\n"   if $$input =~ s{^\\n}{};
+    return "\x0b" if $$input =~ s{^\\v}{};
+    return "\f"   if $$input =~ s{^\\f}{};
+    return "\r"   if $$input =~ s{^\\r}{};
+    return '"'    if $$input =~ s{^\\"}{};
+    return "'"    if $$input =~ s{^\\'}{};
+    return "\\"   if $$input =~ s{^\\\\}{};
 
     return chr(hex($1)) if $$input =~ s{^\\x([a-fA-F0-9]{2})}{};
     return chr(hex($1)) if $$input =~ s{^\\u([a-fA-F0-9]{4})}{};
