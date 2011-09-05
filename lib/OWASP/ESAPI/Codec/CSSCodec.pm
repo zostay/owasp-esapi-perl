@@ -21,7 +21,11 @@ sub decode_character {
     return '' unless length $$input > 0;
 
     # \XXXXXX: turn hex escape into char, absorb trailing whitespace
-    return chr(hex($1)) if $$input =~ s{\\([a-fA-F0-9]{1,6})\s?}{};
+    if ($$input =~ s{\\([a-fA-F0-9]{1,6})\s?}{}) {
+        my $c = chr(hex($1));
+        return "\x{fffd}" unless $c =~ /\p{Assigned}/;
+        return $c;
+    }
 
     return substr $$input, 0, 1, '';
 }

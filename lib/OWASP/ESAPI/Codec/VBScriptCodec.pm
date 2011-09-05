@@ -9,10 +9,10 @@ sub encode {
     my ($self, $immune, $input) = @_;
 
     my $output   = '';
-    my $inquotes = 1;
+    my $inquotes = '';
     for my $c (split //, $input) {
         if (any { $c eq $_ } @$immune or $c =~ /[a-zA-Z0-9]/) {
-            $output .= '&"' unless $inquotes;
+            $output .= '&"' unless $inquotes and length $output;
             $output .= $c;
 
             $inquotes = 1;
@@ -20,7 +20,7 @@ sub encode {
 
         else {
             $output .= '"' if $inquotes;
-            $output .= '&';
+            $output .= '&' if length $output;
             $output .= $self->encode_character($immune, $c);
 
             $inquotes = '';

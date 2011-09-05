@@ -3,7 +3,7 @@ use Moose;
 
 extends 'OWASP::ESAPI::Codec';
 
-use Encode;
+use Encode ();
 
 sub encode_character {
     my ($self, $immune, $c) = @_;
@@ -11,8 +11,8 @@ sub encode_character {
     return $c if $c =~ /[a-zA-Z0-9]/;
 
     # Convert the char to bytes and convert each byte to %FF (or whatever)
-    return join '', map { sprintf '%%%02x' . ord($_) }  
-          split //, encode('UTF-8', $c);
+    return join '', map { sprintf '%%%02x', ord($_) }  
+          split //, Encode::encode('utf8', $c);
 }
 
 sub decode_character {
