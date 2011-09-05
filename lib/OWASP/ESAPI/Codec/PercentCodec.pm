@@ -18,7 +18,7 @@ sub encode_character {
 sub decode_character {
     my ($self, $input) = @_;
 
-    if ($input =~ s/^%([a-fA-F0-9]{2})//) {
+    if ($$input =~ s/^%([a-fA-F0-9]{2})//) {
         
         # Unlike the Java version we do not attempt to validate that this is a
         # valid code point. Why validate something that will always be a valid
@@ -32,7 +32,7 @@ sub decode_character {
         return chr(hex($1));
     }
 
-    return substr $input, 0, 1, '';
+    return substr $$input, 0, 1, '';
 }
 
 __PACKAGE__->meta->make_immutable;
