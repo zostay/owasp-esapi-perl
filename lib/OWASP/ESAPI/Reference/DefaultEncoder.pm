@@ -23,8 +23,8 @@ use namespace::autoclean;
 # ABSTRACT: Reference implementation of Encoder
 
 # Some internal class constants recognizing whitelisted immune charcterc
-my @__standard3 = qw( , . _ );
-my @__standard4 = qw( , . _ - );
+my @__standard3 = (',', qw( . _ ));
+my @__standard4 = (',', qw( . _ - ));
 my @__standard5 = (@__standard4, ' ');
 my %IMMUNE = (
     html       => \@__standard5,
