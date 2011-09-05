@@ -2,7 +2,6 @@ package OWASP::ESAPI::Reference::DefaultEncoder;
 use Moose;
 
 with qw( 
-    OWASP::ESAPI::Encoder
     OWASP::ESAPI::Role::Logger
     OWASP::ESAPI::Role::ESAPI
 );
@@ -157,6 +156,8 @@ has dn_codec => (
 );
 
 sub _build_dn_codec { OWASP::ESAPI::Codec::DNCodec->new }
+
+with 'OWASP::ESAPI::Encoder';
 
 sub canonicalize {
     my ($self, $input, $options) = @_;
