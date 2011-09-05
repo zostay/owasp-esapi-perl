@@ -283,7 +283,7 @@ sub encode_character {
     return $ENTITY_MAP{$c} if defined $ENTITY_MAP{$c};
 
     # everything else: hex code entity
-    return '&#x' . hex($o) . ';';
+    return sprintf '&#x%x;', $o;
 }
 
 sub decode_character {

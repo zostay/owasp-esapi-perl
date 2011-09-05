@@ -24,7 +24,7 @@ sub encode_character {
     return $c if $c =~ /[a-zA-Z0-9]/;
 
     # everything else: hex code entity
-    return '&#x' . hex(ord($c)) . ';';
+    return sprintf '&#x%x;', ord($c);
 }
 
 sub decode_character {
