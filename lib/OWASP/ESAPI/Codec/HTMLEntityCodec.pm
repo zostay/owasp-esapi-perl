@@ -295,9 +295,9 @@ sub decode_character {
     # &#...; -> that Unicode character from decimal
     return chr(0+$1) if $$input =~ s/^&#([0-9]);//;
 
-    # &...; -> the original entity
+    # &...; -> the mapped Unicode char
     if (my ($entity) = $$input =~ s/^&([a-zA-Z0-9]);//) {
-        return $UNICODE_MAP{$1} if defined $UNICODE_MAP{$1};
+        return $UNICODE_MAP{"&$1;"} if defined $UNICODE_MAP{"&$1;"};
 
         # The &entity; is not an entity, put back the entity; and return &
         $$input = $entity . ';' . $$input;
