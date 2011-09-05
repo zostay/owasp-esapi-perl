@@ -7,7 +7,7 @@ use Sub::Exporter -setup => {
         new_exception => curry_method('new'),
     },
     groups => {
-        defaults => [ qw( throw ) ],
+        default => [ qw( throw ) ],
     },
 };
 
@@ -16,4 +16,4 @@ with qw(
     StackTrace::Auto
 );
 
-__PACKAGE__->meta->make_immutable;
+__PACKAGE__->meta->make_immutable( inline_constructor => 0 );
