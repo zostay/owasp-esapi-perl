@@ -27,7 +27,7 @@ sub decode_character {
         # Do I totally misunderstand something about Unicode here? If I do,
         # the easiest way to fix is probably:
         #
-        # use warnings 'FATAL'; # since bad Unicde causes warnings
+        # use warnings 'FATAL'; # since bad Unicode causes warnings
 
         return chr(hex($1));
     }
