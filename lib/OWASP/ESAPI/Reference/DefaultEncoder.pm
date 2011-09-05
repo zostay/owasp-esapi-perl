@@ -192,18 +192,19 @@ sub canonicalize {
         });
     }
 
-    my $found_count = sum @codecs_found;
-    my $mixed_count = sum map { $_ ? 1 : 0 } @codecs_found;
+    my $found_count = sum(@codecs_found) || 0;
+    my $mixed_count = sum(map { $_ ? 1 : 0 } @codecs_found) || 0;
 
     my @messages;
     my %payload;
+
     if ($found_count >= 2) { 
-        push @messages, 'multiple (%{found_count}d)';
+        push @messages, 'multiple (%{found_count}i)';
         $payload{found_count} = $found_count;
     }
 
     if ($mixed_count > 1) {
-        push @messages, 'mixed encoding (%{mixed_count}d)';
+        push @messages, 'mixed encoding (%{mixed_count}i)';
         $payload{mixed_count} = $mixed_count;
     }
 
