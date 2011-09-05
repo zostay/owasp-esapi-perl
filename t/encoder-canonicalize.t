@@ -4,6 +4,10 @@ use warnings;
 
 use Test::More tests => 7;
 use Try::Tiny;
+use Test::MockObject;
+
+my $esapi = Test::MockObject->new;
+$esapi->set_isa('OWASP::ESAPI');
 
 use_ok('OWASP::ESAPI::Reference::DefaultEncoder');
 
@@ -16,8 +20,10 @@ use_ok('OWASP::ESAPI::Reference::DefaultEncoder');
     has from => ( is => 'ro' );
     has to   => ( is => 'ro' );
 
-    sub encode_character {
-        my ($self, $immune, $c) = @_;
+    sub decode_character {
+        my ($self, $input) = @_;
+
+        my $c = substr $$input, 0, 1, '';
         if ($c eq $self->from) {
             return $self->to;
         }
@@ -29,6 +35,7 @@ use_ok('OWASP::ESAPI::Reference::DefaultEncoder');
 
 # TODO Use OWASP::ESAPI to fetch this...
 my $encoder = OWASP::ESAPI::Reference::DefaultEncoder->new(
+    esapi  => $esapi,
     codecs => [
         MockCodec->new( from => 'c', to => 'd' ),
         MockCodec->new( from => 'a', to => 'b' ),
@@ -46,11 +53,11 @@ try {
 catch {
     isa_ok($_, 'OWASP::ESAPI::Exception');
     is($_->ident, 'input validation failure');
-    is_deeply($_->tags, [ 'intrusion' ], 'tags is intrusion');
-    is($_->message, 'Multiple (3) and mixed encoding (3) detected in abcd.', 
+    is($_->tags, 'intrusion', 'tags is intrusion');
+    is($_->message, 'mixed encoding (3) and multiple (4) detected in abcd', 
         'exception message is as expected');
     is_deeply($_->payload, 
-        { found_count => 3, mixed_count => 3, input => 'abcd' }, 
+        { found_count => 4, mixed_count => 3, input => 'abcd' }, 
         'exception payload is as expected');
 };
 
