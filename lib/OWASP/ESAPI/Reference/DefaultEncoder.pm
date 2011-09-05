@@ -266,7 +266,7 @@ sub encode_for_base64 {
     return MIME::Base64::encode_base64($input, $eol);
 }
 
-sub decode_for_base64 {
+sub decode_from_base64 {
     my ($self, $input) = @_;
     return MIME::Base64::decode_base64($input);
 }
