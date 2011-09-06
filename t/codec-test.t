@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 15;
+use Test::More tests => 23;
 
 use_ok('OWASP::ESAPI::Codec::HTMLEntityCodec');
 use_ok('OWASP::ESAPI::Codec::PercentCodec');
@@ -35,5 +35,22 @@ is($css_codec->decode('\\abcdefg'), "\x{FFFD}g", 'test css invalid codepoint dec
 
 is($html_codec->encode([], '<'), '&lt;', 'test HTML encode char');
 is($html_codec->encode([], "\x{100}"), '&#x100;', 'test HTML encode 0x100');
+
 is($percent_codec->encode([], '<'), '%3c', 'test percent encode <');
 is($percent_codec->encode([], "\x{100}"), '%c4%80', 'test percent encode 0x100');
+
+is($javascript_codec->encode([], '<'), '\\x3c', 'test javascript encode <');
+is($javascript_codec->encode([], "\x{100}"), '\\u0100', 'test javascript encode 0x100');
+
+is($vbscript_codec->encode([], '<'), 'chrw(60)', 'test vbscript encode <');
+is($vbscript_codec->encode([], "\x{100}"), 'chrw(256)', 'test vbscript encode 0x100');
+
+is($css_codec->encode([], '<'), '\\3c ', 'test CSS encode <');
+is($css_codec->encode([], "\x{100}"), '\\100 ', 'test CSS encode 0x100');
+
+# TODO various MySQL encoding tests...
+# TODO various Oracle encoding tests...
+# TODO various Unix encoding tests...
+
+is($html_codec->decode('&#116;&#101;&#115;&#116;!'), 'test!', 'test HTML decode decimal entities');
+is($html_codec->decode('&#x74;&#x65;&#x73;&#x74;!'), 'test!', 'test HTML decode hex entities');

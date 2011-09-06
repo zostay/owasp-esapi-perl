@@ -290,14 +290,15 @@ sub decode_character {
     my ($self, $input) = @_;
 
     # &#x...; -> that Unicode character from hexidecimal
-    return chr(hex($1)) if $$input =~ s/^&#[xX]([0-9a-fA-F]);//;
+    return chr(hex($1)) if $$input =~ s/^&#[xX]([0-9a-fA-F]+);//;
 
     # &#...; -> that Unicode character from decimal
-    return chr(0+$1) if $$input =~ s/^&#([0-9]);//;
+    return chr(0+$1) if $$input =~ s/^&#([0-9]+);//;
 
     # &...; -> the mapped Unicode char
-    if (my ($entity) = $$input =~ s/^&([a-zA-Z0-9]);//) {
-        return $UNICODE_MAP{"&$1;"} if defined $UNICODE_MAP{"&$1;"};
+    if ($$input =~ s/^&([a-zA-Z0-9]+);//) {
+        my $entity = $1;
+        return $UNICODE_MAP{"&$entity;"} if defined $UNICODE_MAP{"&$entity;"};
 
         # The &entity; is not an entity, put back the entity; and return &
         $$input = $entity . ';' . $$input;
