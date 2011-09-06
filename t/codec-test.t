@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 23;
+use Test::More tests => 28;
 
 use_ok('OWASP::ESAPI::Codec::HTMLEntityCodec');
 use_ok('OWASP::ESAPI::Codec::PercentCodec');
@@ -54,3 +54,8 @@ is($css_codec->encode([], "\x{100}"), '\\100 ', 'test CSS encode 0x100');
 
 is($html_codec->decode('&#116;&#101;&#115;&#116;!'), 'test!', 'test HTML decode decimal entities');
 is($html_codec->decode('&#x74;&#x65;&#x73;&#x74;!'), 'test!', 'test HTML decode hex entities');
+is($html_codec->decode('&jeff;'), '&jeff;', 'test HTML decode invalid attribute');
+is($html_codec->decode('&amp;'), '&', 'test decode amp');
+is($html_codec->decode('&amp;X'), '&X', 'test decode amp X');
+is($html_codec->decode('&amp'), '&', 'test decode amp no semi');
+is($html_codec->decode('&ampX'), '&X', 'test decode amp no semi X');
