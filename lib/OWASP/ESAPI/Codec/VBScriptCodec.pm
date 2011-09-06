@@ -27,6 +27,7 @@ sub encode {
         }
     }
 
+    $output .= '"' if $inquotes;
     return $output;
 }
 
@@ -40,7 +41,7 @@ sub encode_character {
 sub decode_character {
     my ($self, $input) = @_;
 
-    return '"' if $$input =~ s{^""}{};
+    return $1 if $$input =~ s{^"(.)}{}sm;
     return substr $$input, 0, 1, '';
 }
 

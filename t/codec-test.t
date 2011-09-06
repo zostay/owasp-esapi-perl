@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 68;
+use Test::More tests => 77;
 
 use_ok('OWASP::ESAPI::Codec::HTMLEntityCodec');
 use_ok('OWASP::ESAPI::Codec::PercentCodec');
@@ -100,3 +100,21 @@ is($html_codec->decode("&thetasym;"),  "\x{03D1}",  'test decode thetasym');
 is($html_codec->decode("&thetasym;X"), "\x{03D1}X", 'test decode thetasym X');
 is($html_codec->decode("&thetasym"),   "\x{03D1}",  'test decode thetasym no semi'); 
 is($html_codec->decode("&thetasymX"),  "\x{03D1}X", 'test decode thetasym no semi X');
+
+is($percent_codec->decode('%3c'), '<', 'test percent decode');
+is($javascript_codec->decode('\\x3c'), '<', 'test javascript decode backslash hex');
+is($vbscript_codec->decode('"<'), '<', 'test vbscript decode');
+is($css_codec->decode('\\<'), '<', 'test CSS decode');
+is($css_codec->decode('\\41xyz'), 'Axyz', 'test CSS decode hex no space');
+is($css_codec->decode('\\000041abc'), 'Aabc', 'test CSS decode zero hex no space');
+is($css_codec->decode('\\41 abc'), 'Aabc', 'test CSS decode hex space');
+is($css_codec->decode("abc\\\nxyz"), 'abcxyz', 'test CSS decode NL');
+is($css_codec->decode("abc\\\r\nxyz"), 'abcxyz', 'test CSS decode CRNL');
+
+# TODO MySQL ANSI decode
+# TODO MySQL standard decode
+# TODO Oracle decode
+# TODO Unix decode
+# TODO Windows decode
+
+

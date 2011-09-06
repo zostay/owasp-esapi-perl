@@ -27,6 +27,9 @@ sub decode_character {
         return $c;
     }
 
+    # Return the next char after a \.
+    return $1 if $$input =~ s{^\\(.)}{}ms;
+
     return substr $$input, 0, 1, '';
 }
 
