@@ -11,6 +11,8 @@ use Sub::Exporter -setup => {
     },
 };
 
+use overload '""' => sub { $_[0]->message };
+
 with qw(
     Throwable::X
     StackTrace::Auto
