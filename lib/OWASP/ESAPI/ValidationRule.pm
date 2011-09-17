@@ -129,24 +129,6 @@ sub _check_default {
           or $self->optional and not defined $value;
 }
 
-=head2 encoder
-
-This is the L<OWASP::ESAPI::Encoder> that will be used to decode the original string input.
-
-=cut
-
-has encoder => (
-    is          => 'rw',
-    isa         => 'OWASP::ESAPI::Encoder',
-    required    => 1,
-    lazy_build  => 1,
-);
-
-sub _build_encoder {
-    my $self = shift;
-    $self->esapi->encoder;
-}
-
 =head1 METHODS
 
 =head2 type_name
