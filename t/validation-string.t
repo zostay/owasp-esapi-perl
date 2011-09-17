@@ -7,13 +7,13 @@ use Test::MockObject;
 use Moose::Util::TypeConstraints;
 use Try::Tiny;
 
-use_ok('OWASP::ESAPI::Reference::Validation::StringValidationRule');
+use_ok('OWASP::ESAPI::ValidationRule');
 
 my $esapi = Test::MockObject->new;
 $esapi->set_isa('OWASP::ESAPI');
 
 {
-    my $rule = OWASP::ESAPI::Reference::Validation::StringValidationRule->new(
+    my $rule = OWASP::ESAPI::ValidationRule->new(
         esapi => $esapi,
         type  => 'Str',
     );
@@ -31,7 +31,7 @@ $esapi->set_isa('OWASP::ESAPI');
         => as 'Str'
         => where { /^[a-zA-Z]*$/ };
 
-    my $rule = OWASP::ESAPI::Reference::Validation::StringValidationRule->new(
+    my $rule = OWASP::ESAPI::ValidationRule->new(
         esapi => $esapi,
         type  => 'Letters',
     );
@@ -50,14 +50,14 @@ $esapi->set_isa('OWASP::ESAPI');
 
 {
     try {
-        my $rule = OWASP::ESAPI::Reference::Validation::StringValidationRule->new(
+        my $rule = OWASP::ESAPI::ValidationRule->new(
             esapi => $esapi,
             type  => 'Undef',
         );
         fail('expected exception to be thrown');
     }
     catch {
-        is($_->ident, 'type is not a type of must_subtype', 'got an exception setting type to Undef');
+        is($_->ident, 'type is not a type of Str or coerce from Str', 'got an exception setting type to Undef');
     };
 }
 
@@ -66,7 +66,7 @@ $esapi->set_isa('OWASP::ESAPI');
         => as 'Str'
         => where { not /[<>]/ };
 
-    my $rule = OWASP::ESAPI::Reference::Validation::StringValidationRule->new(
+    my $rule = OWASP::ESAPI::ValidationRule->new(
         esapi => $esapi,
         type  => 'NoAngleBrackets',
     );
@@ -88,7 +88,7 @@ $esapi->set_isa('OWASP::ESAPI');
         => as 'Str'
         => where { length $_ >= 2 and length $_ <= 12 };
 
-    my $rule = OWASP::ESAPI::Reference::Validation::StringValidationRule->new(
+    my $rule = OWASP::ESAPI::ValidationRule->new(
         esapi => $esapi,
         type  => 'NotShorterThan2_NotLongerThan12',
     );
@@ -108,7 +108,7 @@ $esapi->set_isa('OWASP::ESAPI');
 }
 
 {
-    my $rule = OWASP::ESAPI::Reference::Validation::StringValidationRule->new(
+    my $rule = OWASP::ESAPI::ValidationRule->new(
         esapi => $esapi,
         type  => 'Str',
     );

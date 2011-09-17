@@ -1,5 +1,5 @@
 package OWASP::ESAPI::ValidationRule;
-use Moose::Role;
+use Moose;
 
 with qw( OWASP::ESAPI::Role::ESAPI );
 
@@ -53,8 +53,6 @@ has optional => (
 
 This is a Moose type, i.e., a L<Moose::Meta::TypeConstraint>, that the L</get_valid> method will be returning. You may set it using a string, which will be coerced into a Moose type by that name automatically.
 
-This type must be equal to or a subtype of the type returned by L</must_type> for the validation rule.
-
 This type must also be equal to or a subtype of C<Str> or provide a type coercion from C<Str>.
 
 =cut
@@ -72,18 +70,6 @@ has type => (
 
 sub _check_type {
     my ($self, $value) = @_;
-
-    # The given type must be the required subtype
-    throw {
-        ident   => 'type is not a type of must_subtype',
-        tags    => [ 'argument' ],
-        message => 'the type given to validation rule %{rule}s is %{type}s, but that is not a type of %{must_subtype}s',
-        payload => {
-            rule         => $self->meta->name,
-            type         => $value->name,
-            must_subtype => $self->must_subtype->name,
-        },
-    } unless $value->is_a_type_of($self->must_subtype);
 
     # The given type must be a type of 'Str' or provide a coercion from 'Str'
     throw {
@@ -304,21 +290,5 @@ sub is_valid {
 
     return $valid;
 }
-
-=head1 REQUIRED METHODS
-
-Implementors must provide the following methods.
-
-=head2 must_subtype
-
-  my $type = $self->must_subtype;
-
-This must return an instance of L<Moose::Meta::TypeConstraint> that will be use to validate the L</type>.
-
-=cut
-
-requires qw(
-    must_subtype
-);
 
 1;
