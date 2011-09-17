@@ -98,6 +98,37 @@ sub _check_type {
           or ($value->has_coercion and $value->coercion->has_coercion_for_type('Str'));
 }
 
+=head2 safe_default
+
+This may be set to a safe default value for your validation. It must match the given type. If not given, all calls to L</get_safe> will fail with an immediate exception (i.e., it can't be safe if you don't give this value).
+
+You may set this to C<undef> if L</optional> is true or if it is allowed by L</type>.
+
+=cut
+
+has default => (
+    is          => 'rw',
+    predicate   => 'has_default',
+    trigger     => \&_check_default,
+);
+
+sub _check_default {
+    my ($self, $value) = @_;
+
+    throw {
+        ident   => 'default does not match type',
+        tags    => [ 'argument' ],
+        message => 'the default %{value}s does not match type %{type}s for rule %{rule}s: %{message}s',
+        payload => {
+            rule    => $self->meta->name,
+            value   => $value,
+            type    => $self->type->name,
+            message => $self->type->validate($value),
+        },
+    } unless $self->type->check($value)
+          or $self->optional and not defined $value;
+}
+
 =head2 encoder
 
 This is the L<OWASP::ESAPI::Encoder> that will be used to decode the original string input.
@@ -235,7 +266,9 @@ sub get_valid {
       input   => 'input',
   );
 
-This will call L</get_valid> to get a valid value from the input, if possible. If that fails, it will call L</sanitize> to get a valid input. The intent of this method is to make sure to return a value of the correct type regardless of the input.
+This will call L</get_valid> to get a valid value from the input, if possible. If that fails, it will use L</default> to get a valid value. The intent of this method is to make sure to return a value of the correct type regardless of the input.
+
+If L</default> is not set, this method will immediately fail. You must set a default for safety to be guaranteed.
 
 =cut
 
@@ -245,12 +278,17 @@ sub get_safe {
         input      => { isa => 'Maybe[Str]' },
     );
 
+    throw {
+        ident   => 'cannot call get_safe without a default',
+        tags    => [ 'state' ],
+    } unless $self->has_default;
+
     my $valid;
     try {
         $valid = $self->get_valid(%params);
     }
     catch {
-        $valid = $self->sanitize(%params);
+        $valid = $self->default;
     };
 
     return $valid;
@@ -295,20 +333,10 @@ Implementors must provide the following methods.
 
 This must return an instance of L<Moose::Meta::TypeConstraint> that will be use to validate the L</type>.
 
-=head2 sanitize
-
-  my $value = $self->sanitize(
-      context => 'field name',
-      input   => 'input',
-  );
-
-This must always return a valid value for the type in L</type> so that L</get_safe> will always return a valid value, even if that value has nothing to do with the given input.
-
 =cut
 
 requires qw(
     must_subtype
-    sanitize
 );
 
 1;
