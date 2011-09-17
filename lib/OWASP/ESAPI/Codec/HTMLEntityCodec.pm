@@ -4,6 +4,7 @@ use Moose;
 extends 'OWASP::ESAPI::Codec';
 
 use List::MoreUtils qw( any );
+use MooseX::Params::Validate;
 
 {
 my %ENTITY_MAP = (
@@ -265,7 +266,10 @@ my %ENTITY_MAP = (
 my %UNICODE_MAP = reverse %ENTITY_MAP;
 
 sub encode_character {
-    my ($self, $immune, $c) = @_;
+    my ($self, $immune, $c) = validated_list(\@_,
+        immune => { isa => 'ArrayRef[Str]' },
+        input  => { isa => 'Str' },
+    );
 
     # immune chars: as-is
     return $c if any { $_ eq $c } @$immune;
@@ -287,7 +291,9 @@ sub encode_character {
 }
 
 sub decode_character {
-    my ($self, $input) = @_;
+    my ($self, $input) = validated_list(\@_,
+        input => { isa => 'ScalarRef[Str]' },
+    );
 
     # &#x...; -> that Unicode character from hexidecimal
     return chr(hex($1)) if $$input =~ s/^&#[xX]([0-9a-fA-F]+);//;

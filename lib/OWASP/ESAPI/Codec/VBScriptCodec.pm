@@ -4,9 +4,13 @@ use Moose;
 extends 'OWASP::ESAPI::Codec';
 
 use List::MoreUtils qw( any );
+use MooseX::Params::Validate;
 
 sub encode {
-    my ($self, $immune, $input) = @_;
+    my ($self, $immune, $input) = validated_list(\@_,
+        immune => { isa => 'ArrayRef[Str]' },
+        input  => { isa => 'Str' },
+    );
 
     my $output   = '';
     my $inquotes = '';
@@ -21,7 +25,7 @@ sub encode {
         else {
             $output .= '"' if $inquotes;
             $output .= '&' if length $output;
-            $output .= $self->encode_character($immune, $c);
+            $output .= $self->encode_character(immune => $immune, input => $c);
 
             $inquotes = '';
         }
@@ -32,14 +36,19 @@ sub encode {
 }
 
 sub encode_character {
-    my ($self, $immune, $c) = @_;
+    my ($self, $immune, $c) = validated_list(\@_,
+        immune => { isa => 'ArrayRef[Str]' },
+        input  => { isa => 'Str' },
+    );
 
     return $c if any { $c eq $_ } @$immune or $c =~ /[a-zA-Z0-9]/;
     return 'chrw(' . ord($c) . ')';
 }
 
 sub decode_character {
-    my ($self, $input) = @_;
+    my ($self, $input) = validated_list(\@_,
+        input  => { isa => 'ScalarRef[Str]' },
+    );
 
     return $1 if $$input =~ s{^"(.)}{}sm;
     return substr $$input, 0, 1, '';

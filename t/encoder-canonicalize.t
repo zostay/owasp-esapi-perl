@@ -17,11 +17,15 @@ use_ok('OWASP::ESAPI::Reference::DefaultEncoder');
 
     extends 'OWASP::ESAPI::Codec';
 
+    use MooseX::Params::Validate;
+
     has from => ( is => 'ro' );
     has to   => ( is => 'ro' );
 
     sub decode_character {
-        my ($self, $input) = @_;
+        my ($self, $input) = validated_list(\@_,
+            input => { isa => 'ScalarRef[Str]' },
+        );
 
         my $c = substr $$input, 0, 1, '';
         if ($c eq $self->from) {
@@ -47,7 +51,7 @@ my $encoder = OWASP::ESAPI::Reference::DefaultEncoder->new(
 );
 
 try {
-    my $encoded = $encoder->canonicalize('abcd', { strict => 1 });
+    my $encoded = $encoder->canonicalize({ input => 'abcd', strict => 1 });
     fail('canonicalize should have thrown an exception');
 }
 catch {
@@ -62,7 +66,7 @@ catch {
 };
 
 try {
-    my $encoded = $encoder->canonicalize('abcd', { strict => 0 });
+    my $encoded = $encoder->canonicalize({ input => 'abcd', strict => 0 });
     is($encoded, 'dddd', 'encoded to dddd');
 
     # TODO Test logging...

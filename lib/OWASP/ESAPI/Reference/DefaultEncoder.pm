@@ -16,6 +16,7 @@ use OWASP::ESAPI::Exception;
 
 use List::Util qw( sum );
 use MIME::Base64 ();
+use MooseX::Params::Validate;
 use URI::Escape ();
 
 use namespace::autoclean;
@@ -66,10 +67,10 @@ has html_entity_codec => (
     required    => 1,
     lazy_build  => 1,
     handles     => {
-        encode_for_html           => [ encode => $IMMUNE{html} ],
+        encode_for_html           => [ encode => immune => $IMMUNE{html} ],
         decode_for_html           => 'decode',
-        encode_for_html_attribute => [ encode => $IMMUNE{htmlattr}, ],
-        encode_for_xpath          => [ encode => $IMMUNE{xpath} ],
+        encode_for_html_attribute => [ encode => immune => $IMMUNE{htmlattr}, ],
+        encode_for_xpath          => [ encode => immune => $IMMUNE{xpath} ],
     },
 );
 
@@ -81,8 +82,8 @@ has xml_entity_codec => (
     required    => 1,
     lazy_build  => 1,
     handles     => {
-        encode_for_xml           => [ encode => $IMMUNE{xml} ],
-        encode_for_xml_attribute => [ encode => $IMMUNE{xmlattr} ],
+        encode_for_xml           => [ encode => immune => $IMMUNE{xml} ],
+        encode_for_xml_attribute => [ encode => immune => $IMMUNE{xmlattr} ],
     },
 );
 
@@ -103,7 +104,7 @@ has javascript_codec => (
     required    => 1,
     lazy_build  => 1,
     handles     => {
-        encode_for_javascript => [ encode => $IMMUNE{javascript} ],
+        encode_for_javascript => [ encode => immune => $IMMUNE{javascript} ],
     },
 );
 
@@ -115,7 +116,7 @@ has vbscript_codec => (
     required    => 1,
     lazy_build  => 1,
     handles     => {
-        encode_for_vbscript => [ encode => $IMMUNE{vbscript} ],
+        encode_for_vbscript => [ encode => immune => $IMMUNE{vbscript} ],
     },
 );
 
@@ -127,7 +128,7 @@ has css_codec => (
     required    => 1,
     lazy_build  => 1,
     handles     => {
-        encode_for_css => [ encode => $IMMUNE{css} ],
+        encode_for_css => [ encode => immune => $IMMUNE{css} ],
     },
 );
 
@@ -139,7 +140,7 @@ has ldap_codec => (
     required    => 1,
     lazy_build  => 1,
     handles     => {
-        encode_for_ldap => [ encode => $IMMUNE{ldap} ],
+        encode_for_ldap => [ encode => immune => $IMMUNE{ldap} ],
     },
 );
 
@@ -151,7 +152,7 @@ has dn_codec => (
     required    => 1,
     lazy_build  => 1,
     handles     => {
-        encode_for_dn => [ encode => $IMMUNE{dn} ],
+        encode_for_dn => [ encode => immune => $IMMUNE{dn} ],
     },
 );
 
@@ -160,13 +161,18 @@ sub _build_dn_codec { OWASP::ESAPI::Codec::DNCodec->new }
 with 'OWASP::ESAPI::Encoder';
 
 sub canonicalize {
-    my ($self, $input, $options) = @_;
+    my ($self, %params) = validated_hash(\@_,
+        input             => { isa => 'Maybe[Str]' },
+        restrict_multiple => { isa => 'Bool', optional => 1 },
+        restrict_mixed    => { isa => 'Bool', optional => 1 },
+        strict            => { isa => 'Bool', optional => 1 },
+    );
 
+    my $input = $params{input};
     return unless defined $input;
 
-    $options = {} unless defined $options;
-    my $restrict_multiple = $options->{restrict_multiple} || $options->{strict};
-    my $restrict_mixed    = $options->{restrict_mixed}    || $options->{strict};
+    my $restrict_multiple = $params{restrict_multiple} || $params{strict};
+    my $restrict_mixed    = $params{restrict_mixed}    || $params{strict};
 
     $restrict_multiple = !$self->esapi->security_configuration->allow_multiple_encoding
         unless defined $restrict_multiple;
@@ -182,7 +188,7 @@ sub canonicalize {
 
         $self->_apply_codecs(sub {
             my $old = $working;
-            $working = $_->decode($working);
+            $working = $_->decode(input => $working);
             if ($working ne $old) {
                 $codecs_found[ $codec_index ]++;
                 $clean = '';
@@ -233,35 +239,46 @@ sub canonicalize {
 }
 
 sub encode_for_sql {
-    my ($self, $codec, $input) = @_;
-    return $codec->encode($IMMUNE{sql}, $input);
+    my ($self, $codec, $input) = validated_list(\@_,
+        codec => { isa => 'OWASP::ESAPI::Codec' },
+        input => { isa => 'Str' },
+    );
+    return $codec->encode(immune => $IMMUNE{sql}, input => $input);
 }
 
 sub encode_for_os {
-    my ($self, $codec, $input) = @_;
-    return $codec->encode($IMMUNE{os}, $input);
+    my ($self, $codec, $input) = valiedated_list(\@_,
+        codec => { isa => 'OWASP::ESAPI::Codec' },
+        input => { isa => 'Str' },
+    );
+    return $codec->encode(immune => $IMMUNE{os}, input => $input);
 }
 
 sub encode_for_url {
-    my ($self, $input) = @_;
+    my ($self, $input) = validated_list(\@_,
+        input => { isa => 'Str' },
+    );
     return URI::Escape::uri_escape($input);
 }
 
 sub decode_from_url {
-    my ($self, $input) = @_;
+    my ($self, $input) = validated_list(\@_,
+        input => { isa => 'Str' },
+    );
 
     return unless defined $input;
 
-    my $canonical = $self->canonical($input);
+    my $canonical = $self->canonicalize({ input => $input });
     return URI::Escape::uri_unescape($canonical);
 }
 
 sub encode_for_base64 {
-    my ($self, $input, $options) = @_;
-    $options = {} unless defined $options;
-    $options->{wrap} = 1 unless defined $options->{wrap};
+    my ($self, $input, $wrap) = validated_list(\@_,
+        input => { isa => 'Str' },
+        wrap  => { isa => 'Bool', default => 1 },
+    );
 
-    my $eol = $options->{wrap} ? "\n" : "";
+    my $eol = $wrap ? "\n" : "";
 
     return MIME::Base64::encode_base64($input, $eol);
 }

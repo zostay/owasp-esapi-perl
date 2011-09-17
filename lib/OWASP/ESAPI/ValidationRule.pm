@@ -5,6 +5,7 @@ with qw( OWASP::ESAPI::Role::ESAPI );
 
 use OWASP::ESAPI::Exception qw( new_exception throw );
 use OWASP::ESAPI::Types qw( TypeConstraint );
+use MooseX::Params::Validate;
 use Try::Tiny;
 
 # ABSTRACT: Interface for type-oriented input validation tools
@@ -135,7 +136,10 @@ Throws an exception if the given input is not valid according to this validation
 =cut
 
 sub assert_valid {
-    my ($self, %params) = @_;
+    my ($self, %params) = validated_has(\@_,
+        context => { isa => 'Str' },
+        input   => { isa => 'Maybe[Str]' },
+    );
     $self->get_valid(%params);
     return;
 }
@@ -167,16 +171,17 @@ If C<@error_list> is not passed, the validation exception will be thrown.
 =cut
 
 sub get_valid {
-    my ($self, %params) = @_;
+    my ($self, %params) = validated_hash(\@_,
+        context    => { isa => 'Str' },
+        input      => { isa => 'Maybe[Str]' },
+        error_list => { isa => 'ArrayRef', optional => 1 },
+    );
 
     my $context    = $params{context};
     my $input      = $params{input};
     my $error_list = $params{error_list};
 
     return $input if $self->optional and not defined $input;
-
-    throw "context is required" unless defined $context;
-    throw "input is required"   unless defined $input;
 
     my $valid;
     try {
@@ -235,7 +240,10 @@ This will call L</get_valid> to get a valid value from the input, if possible. I
 =cut
 
 sub get_safe {
-    my ($self, %params) = @_;
+    my ($self, %params) = validated_hash(\@_,
+        context    => { isa => 'Str' },
+        input      => { isa => 'Maybe[Str]' },
+    );
 
     my $valid;
     try {
@@ -260,7 +268,10 @@ Calls L</get_valid> and returns a true value if the given input is valid. Return
 =cut
 
 sub is_valid {
-    my ($self, %params) = @_;
+    my ($self, %params) = validated_hash(\@_,
+        context    => { isa => 'Str' },
+        input      => { isa => 'Maybe[Str]' },
+    );
 
     my $valid = '';
     try {

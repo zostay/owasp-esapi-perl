@@ -3,10 +3,14 @@ use Moose;
 
 extends 'OWASP::ESAPI::Codec';
 
+use MooseX::Params::Validate;
 use List::MoreUtils qw( any );
 
 sub encode_character {
-    my ($self, $immune, $c) = @_;
+    my ($self, $immune, $c) = validated_list(\@_,
+        immune => { isa => 'ArrayRef[Str]' },
+        input  => { isa => 'Str' },
+    );
 
     return $c if any { $c eq $_ } @$immune;
     return $c if $c =~ /[a-zA-Z0-9]/;
@@ -14,7 +18,9 @@ sub encode_character {
 }
 
 sub decode_character {
-    my ($self, $input) = @_;
+    my ($self, $input) = validated_list(\@_,
+        input => { isa => 'ScalarRef[Str]' },
+    );
 
     # Strip Whitespace from lines ending in \
     $$input =~ s{^\\(?:[\n\f\0]|\r\n?)}{};

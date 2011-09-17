@@ -4,9 +4,13 @@ use Moose;
 extends 'OWASP::ESAPI::Codec';
 
 use List::MoreUtils qw( any );
+use MooseX::Params::Validate;
 
 sub encode_character {
-    my ($self, $immune, $c) = @_;
+    my ($self, $immune, $c) = validated_list(\@_,
+        immune => { isa => 'ArrayRef[Str]' },
+        input  => { isa => 'Str' },
+    );
 
     # immune: as-is
     return $c if any { $c eq $_ } @$immune;
@@ -24,7 +28,9 @@ sub encode_character {
 }
 
 sub decode_character {
-    my ($self, $input) = @_;
+    my ($self, $input) = validated_list(\@_,
+        input  => { isa => 'ScalarRef[Str]' },
+    );
 
     return "\b"   if $$input =~ s{^\\b}{};
     return "\t"   if $$input =~ s{^\\t}{};

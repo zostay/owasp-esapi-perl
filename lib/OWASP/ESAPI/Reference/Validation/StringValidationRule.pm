@@ -54,7 +54,10 @@ Returns the string with any non-alphanumeric ASCII character stripped. If this i
 =cut
 
 sub sanitize {
-    my ($self, %params) = @_;
+    my ($self, %params) = validated_hash(\@_,
+        context    => { isa => 'Str' },
+        input      => { isa => 'Maybe[Str]' },
+    );
 
     my $input = $params{input};
     $input =~ tr/[A-Za-z0-9]//cd;
