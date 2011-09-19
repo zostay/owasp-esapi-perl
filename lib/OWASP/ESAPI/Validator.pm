@@ -6,7 +6,10 @@ with qw(
 );
 
 use OWASP::ESAPI::ValidationRule;
+use OWASP::ESAPI::ValidationRule::HTML;
 use DateTime;
+use MooseX::Types::CreditCard qw( CreditCard );
+use MooseX::Types::Path::Class;
 use Scalar::Util qw( blessed );
 use Try::Tiny;
 
@@ -32,7 +35,12 @@ sub _is_valid {
 sub _get_valid {
     my ($self, %params) = @_;
 
-    my $rule = OWASP::ESAPI::ValidationRule->new(
+    my $rule_class = 'OWASP::ESAPI::ValidationRule';
+    if ($params{rule}) {
+        $rule_class .= "::$params{rule}";
+    }
+
+    my $rule = $rule_class->new(
         esapi    => $self->esapi,
         type     => $type,
         optional => $params{optional},
@@ -138,28 +146,149 @@ sub get_valid_date {
     return $self->_get_valid(%params, type => $type);
 }
 
+sub is_valid_safe_html {
+    my ($self, %params) = validated_hash(\@_,
+        method     => { isa => 'Str' },
+        context    => { isa => 'Str' },
+        input      => { isa => 'Maybe[Str]' },
+        type       => { isa => 'Str' },
+        optional   => { isa => 'Bool' },
+    );
+
+    return $self->_is_valid(%params, method => 'get_valid_safe_html');
+}
+
+sub get_valid_safe_html {
+    my ($self, %params) = validated_hash(\@_,
+        context    => { isa => 'Str' },
+        input      => { isa => 'Maybe[Str]' },
+        type       => { isa => 'Str' },
+        optional   => { isa => 'Bool' },
+        error_list => { isa => 'ArrayRef' },
+    );
+
+    my $type = $self->esapi->security_configuration->get_validation_type(
+        type => $params{type},
+    );
+
+    return $self->_get_valid(%params, rule => 'HTML', type => $type);
+}
+
+sub is_valid_credit_card {
+    my ($self, %params) = validated_hash(\@_,
+        method     => { isa => 'Str' },
+        context    => { isa => 'Str' },
+        input      => { isa => 'Maybe[Str]' },
+        optional   => { isa => 'Bool' },
+    );
+
+    return $self->_is_valid(%params, method => 'get_valid_credit_card');
+}
+
+sub get_valid_credit_card {
+    my ($self, %params) = validated_hash(\@_,
+        context    => { isa => 'Str' },
+        input      => { isa => 'Maybe[Str]' },
+        optional   => { isa => 'Bool' },
+        error_list => { isa => 'ArrayRef' },
+    );
+
+    return $self->_get_valid(%params, type => CreditCard);
+}
+
+sub is_valid_directory_path {
+    my ($self, %params) = validated_hash(\@_,
+        method     => { isa => 'Str' },
+        context    => { isa => 'Str' },
+        input      => { isa => 'Maybe[Str]' },
+        optional   => { isa => 'Bool' },
+    );
+
+    return $self->_is_valid(%params, method => 'get_valid_directory_path');
+}
+
+sub get_valid_directory_path {
+    my ($self, %params) = validated_hash(\@_,
+        context    => { isa => 'Str' },
+        input      => { isa => 'Maybe[Str]' },
+        optional   => { isa => 'Bool' },
+        error_list => { isa => 'ArrayRef' },
+    );
+
+    return $self->_get_valid(%params, type => 'Path::Class::Dir');
+}
+
+sub is_valid_file_name {
+    my ($self, %params) = validated_hash(\@_,
+        method     => { isa => 'Str' },
+        context    => { isa => 'Str' },
+        input      => { isa => 'Maybe[Str]' },
+        optional   => { isa => 'Bool' },
+    );
+
+    return $self->_is_valid(%params, method => 'get_valid_file_name');
+}
+
+sub get_valid_file_name {
+    my ($self, %params) = validated_hash(\@_,
+        context    => { isa => 'Str' },
+        input      => { isa => 'Maybe[Str]' },
+        optional   => { isa => 'Bool' },
+        error_list => { isa => 'ArrayRef' },
+    );
+
+    return $self->_get_valid(%params, type => 'Path::Class::File');
+}
+
+sub is_valid_number {
+    my ($self, %params) = validated_hash(\@_,
+        method     => { isa => 'Str' },
+        context    => { isa => 'Str' },
+        input      => { isa => 'Maybe[Str]' },
+        optional   => { isa => 'Bool' },
+    );
+
+    return $self->_is_valid(%params, method => 'get_valid_number');
+}
+
+sub is_valid_double { shift->is_valid_number(@_) }
+
+sub get_valid_number {
+    my ($self, %params) = validated_hash(\@_,
+        context    => { isa => 'Str' },
+        input      => { isa => 'Maybe[Str]' },
+        optional   => { isa => 'Bool' },
+        error_list => { isa => 'ArrayRef' },
+    );
+
+    return $self->_get_valid(%params, type => 'Num');
+}
+
+sub get_valid_double { shift->get_valid_number(@_) }
+
+sub is_valid_integer {
+    my ($self, %params) = validated_hash(\@_,
+        method     => { isa => 'Str' },
+        context    => { isa => 'Str' },
+        input      => { isa => 'Maybe[Str]' },
+        optional   => { isa => 'Bool' },
+    );
+
+    return $self->_is_valid(%params, method => 'get_valid_integer');
+}
+
+sub get_valid_integer {
+    my ($self, %params) = validated_hash(\@_,
+        context    => { isa => 'Str' },
+        input      => { isa => 'Maybe[Str]' },
+        optional   => { isa => 'Bool' },
+        error_list => { isa => 'ArrayRef' },
+    );
+
+    return $self->_get_valid(%params, type => 'Int');
+}
+
 # TODO Add each of the following methods
-#
-#    is_valid_safe_html
-#    get_valid_safe_html
-#
-#    is_valid_credit_card
-#    get_valid_credit_card
-#
-#    is_valid_directory_path
-#    get_valid_directory_path
-#
-#    is_valid_file_name
-#    get_valid_file_name
-#
-#    is_valid_number
-#    get_valid_number
-#
-#    is_valid_integer
-#    get_valid_integer
-#
-#    is_valid_double
-#    get_valid_double
 #
 #    is_valid_file_content
 #    get_valid_file_content
