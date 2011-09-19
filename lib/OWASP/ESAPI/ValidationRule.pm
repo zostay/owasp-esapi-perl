@@ -167,7 +167,17 @@ If C<@error_list> is not passed, the validation exception will be thrown.
 
 =back
 
+A subclass of L<OWASP::ESAPI::ValidationRule> may choose to augment this method by implementing either of the C<precheck_validation> or C<postcheck_validation> methods. Each of these will be passed a reference to the passed arguments and may modify these or throw exceptions. The return value of these methods is ignored.
+
+The C<precheck_validation> method will be called before any validation of the value is performed.
+
+The C<postcheck_validation> method will be called after the value has been validated and coerced. It will not be called if C<precheck_validation ,type validation or type coercion have thrown an exception. The hash reference passed to this method also contains an additional key, C<value>, which points to the validated (and possibly coerced) version of the orignal input.
+
 =cut
+
+sub precheck_validation { }
+
+sub postcheck_validation { }
 
 sub get_valid {
     my ($self, %params) = validated_hash(\@_,
@@ -176,31 +186,35 @@ sub get_valid {
         error_list => { isa => 'ArrayRef', optional => 1 },
     );
 
-    my $context    = $params{context};
-    my $input      = $params{input};
-    my $error_list = $params{error_list};
-
-    return $input if $self->optional and not defined $input;
+    return $params{input} if $self->optional and not defined $params{input};
 
     my $valid;
     try {
 
+        # Before validation, a subclass may augment the type checking here
+        $self->precheck_validation(\%params);
+
         # If it's valid, we're done
-        if ($self->type->check($input)) {
-            $valid = $input;
+        if ($self->type->check($params{input})) {
+            $valid = $params{input};
         }
 
         # Otherwise, try to coerce it
         else {
-            $valid = $self->type->assert_coerce($input);
+            $valid = $self->type->assert_coerce($params{input});
         }
+
+        # After validation, a subclass may augment the type checking as well
+        # to deal with the final and possibly coerced value.
+        $params{value} = $valid;
+        $self->postcheck_validation(\%params);
 
     }
     catch {
 
         # The coercion error is not helpful, use the validation error
         if (/Cannot coerce without a type coercion/) {
-            $_ = $self->type->validate($input);
+            $_ = $self->type->validate($params{input});
         }
 
         my $exception = new_exception {
@@ -208,12 +222,13 @@ sub get_valid {
             tags    => [ 'validation' ],
             message => '%{context}s: %{message}s',
             payload => {
-                context => $context // '',
+                context => $params{context} // '',
                 message => $_ // '',
             },
         };
 
         # If there's an error list, push it
+        my $error_list = $params{error_list};
         if (defined $error_list) {
             push @$error_list, $exception;
         }
