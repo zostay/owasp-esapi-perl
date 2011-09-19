@@ -9,7 +9,7 @@ use Test::MockObject;
 my $esapi = Test::MockObject->new;
 $esapi->set_isa('OWASP::ESAPI');
 
-use_ok('OWASP::ESAPI::Reference::DefaultEncoder');
+use_ok('OWASP::ESAPI::Encoder');
 
 {
     package MockCodec;
@@ -38,7 +38,7 @@ use_ok('OWASP::ESAPI::Reference::DefaultEncoder');
 }
 
 # TODO Use OWASP::ESAPI to fetch this...
-my $encoder = OWASP::ESAPI::Reference::DefaultEncoder->new(
+my $encoder = OWASP::ESAPI::Encoder->new(
     esapi  => $esapi,
     codecs => [
         MockCodec->new( from => 'c', to => 'd' ),
