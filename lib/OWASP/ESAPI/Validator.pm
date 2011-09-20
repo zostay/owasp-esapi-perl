@@ -10,7 +10,9 @@ use OWASP::ESAPI::ValidationRule::HTML;
 use DateTime;
 use MooseX::Types::CreditCard qw( CreditCard );
 use MooseX::Types::Path::Class;
+use MooseX::Types::Set::Object;
 use Scalar::Util qw( blessed );
+use Set::Object;
 use Try::Tiny;
 
 has '+esapi' => (
@@ -288,6 +290,82 @@ sub get_valid_integer {
     return $self->_get_valid(%params, type => 'Int');
 }
 
+sub is_valid_list_item {
+    my ($self, %params) = validated_hash(\@_,
+        context    => { isa => 'Str' },
+        input      => { isa => 'Maybe[Str]' },
+        list       => { isa => 'ArrayRef[Str]' },
+        optional   => { isa => 'Bool' },
+    );
+
+    return $self->_is_valid(%params, method => 'get_valid_list_item');
+}
+
+sub get_valid_list_item {
+    my ($self, %params) = validated_hash(\@_,
+        context    => { isa => 'Str' },
+        input      => { isa => 'Maybe[Str]' },
+        list       => { isa => 'ArrayRef[Str]' },
+        optional   => { isa => 'Bool' },
+        error_list => { isa => 'ArrayRef' },
+    );
+
+    return $self->_get_valid(%params, type => enum($params{list}));
+}
+
+sub is_valid_psgi_env_parameter_set {
+    my ($self, %params) = validated_hash(\@_,
+        context        => { isa => 'Str' },
+        env            => { isa => 'HashRef' },
+        required_names => { isa => 'ArrayRef[Str]' },
+        optional_names => { isa => 'ArrayRef[Str]' },
+    );
+
+    return $self->_is_valid(%params, method => 'assert_valid_psgi_env_parameter_set');
+}
+
+sub assert_valid_psgi_env_parameter_set {
+    my ($self, %params) = validated_hash(\@_,
+        context        => { isa => 'Str' },
+        env            => { isa => 'HashRef' },
+        required_names => { isa => 'Set::Object', coerce => 1 },
+        optional_names => { isa => 'Set::Object', coerce => 1 },
+    );
+
+    my $required_names = $params{required_names};
+    my $optional_names = $params{optional_names};
+
+    my $request = Plack::Request->new($params{env});
+    my $keys = Set::Object->new($request->parameters->keys);
+
+    my $missing = $required_names->difference($keys);
+    if ($missing->size > 0) {
+        throw {
+            ident   => 'invalid HTTP request missing required parameters',
+            tags    => [ 'validation' ],
+            message => 'invalid HTTP request missing required parameters: %{missing_list}s',
+            payload => {
+                missing_names => $missing,
+                missing_list  => Moose::Util::english_list($missing->members),
+            },
+        };
+    }
+
+    my $extra = $keys->difference($required_names)
+                     ->difference($optional_names);
+    if ($extra->size > 0) {
+        throw {
+            ident   => 'invalid HTTP request extra parameters',
+            tags    => [ 'validation' ],
+            message => 'invalid HTTP request extra parameters: %{extra_list}s',
+            payload => {
+                extra_names => $extra,
+                extra_list  => Moose::Util::english_list($extra->members),
+            },
+        };
+    }
+}
+
 # TODO Add each of the following methods
 #
 #    is_valid_file_content
@@ -295,12 +373,6 @@ sub get_valid_integer {
 #
 #    is_valid_file_upload
 #    assert_valid_file_upload
-#
-#    is_valid_list_item
-#    get_valid_list_item
-#
-#    is_valid_http_request_parameter_set
-#    assert_valid_http_request_parameter_set
 #
 #    is_valid_printable
 #    get_valid_printable
